@@ -9,7 +9,25 @@
     <PublishTrimmed>true</PublishTrimmed>
     <StripSymbols>true</StripSymbols>
     <!-- <PublishSingleFile>true</PublishSingleFile> -->
-  </PropertyGroup>
+
+    <!-- nuget -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>csheader</ToolCommandName>
+    <Version>0.1.0</Version>
+    <Authors>Jojor</Authors>
+    <Description>Header-like documentation generation for c# projects</Description>
+    <PackageTags>csharp;roslyn;tool;api;generator;documentation</PackageTags>
+    <RepositoryUrl>https://github.com/xjojorx/CSheader</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+    <ItemGroup>
+      <None Include="LICENSE" Pack="true" PackagePath="" />
+      <None Include="README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
   <ItemGroup>
     <Compile Remove="ws.cs"/>
   </ItemGroup>

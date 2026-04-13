@@ -21,7 +21,13 @@ If no output file is specified, it will print on the standard output
 
 ## Installation
 
-This will soon be available via nuget and `dotnet tool`. Until then, compile from source.
+CSheader is available as a [nuget package](https://www.nuget.org/packages/CSheader):
+
+```bash
+dotnet tool install --global CSheader
+```
+
+Until then, compile from source.
 
 
 ## Future work
