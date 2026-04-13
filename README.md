@@ -27,7 +27,7 @@ CSheader is available as a [nuget package](https://www.nuget.org/packages/CShead
 dotnet tool install --global CSheader
 ```
 
-Until then, compile from source.
+You can also compile from source with the standard dotnet build/publish commands.
 
 
 ## Future work
