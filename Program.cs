@@ -32,6 +32,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis.MSBuild;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Csheader;
 class Program
@@ -44,11 +45,12 @@ class Program
 
                 If an output path is not specified, then the result will be on the standard output.
             """);
+            Environment.Exit(1);
         }
         string path = args[0];
         Console.WriteLine($"loading {path}");
-        if (!File.Exists(path)) {
-            Console.Error.WriteLine("file not found");
+        if (!Path.Exists(path)) {
+            Console.Error.WriteLine("project not found");
             Environment.Exit(1);
         }
 
@@ -62,10 +64,10 @@ class Program
         using var outStream = outSink;
 
         var sourceFiles = Project.ListSources(path);
-        foreach(var f in sourceFiles) { 
-            Console.WriteLine(f);
-        }
-        Console.WriteLine(sourceFiles.Count);
+        // foreach(var f in sourceFiles) { 
+        //     Console.WriteLine(f);
+        // }
+        Console.WriteLine($"{sourceFiles.Count} files");
 
         List<SyntaxTree> trees = new(capacity: sourceFiles.Count);
         foreach(var f in sourceFiles) {
@@ -74,7 +76,7 @@ class Program
             trees.Add(ftree);
         }
 
-        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))
+        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
             .Select(path => MetadataReference.CreateFromFile(path));
 
@@ -446,25 +448,48 @@ class Program
 
 public static class Project {
 
-    public static List<string> ListSources(string csproj) {
-        Debug.Assert(File.Exists(csproj));
-        Debug.Assert(Path.GetExtension(csproj) == ".csproj", "Not a csproj file");
+    public static List<string> ListSources(string path) {
+        if(!Path.Exists(path)) {
+            throw new Exception("path does not exist");
+        }
 
-        var dir = Path.GetDirectoryName(Path.GetFullPath(csproj));
-        Console.WriteLine($"dir: {dir}");
+        string dir;
+        string? csproj = null;
+        if(File.Exists(path)) {
+            var ext = Path.GetExtension(path);
+            if(ext == ".cs") {
+                return [path];
+            }
+            Debug.Assert(Path.GetExtension(path) == ".csproj", "Not a csproj file");
+
+            csproj = Path.GetFullPath(path);
+            dir = Path.GetDirectoryName(csproj)!;
+        } else {
+            dir = path;
+            csproj = Directory.EnumerateFiles(dir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+        } 
 
         List<string> exclusions = new();
         exclusions.Add(Path.Join(dir, "bin"));
         exclusions.Add(Path.Join(dir, "obj"));
-        //TODO: parse csproj and include the entries that are <Compile Remove="..."/>
+        if(!string.IsNullOrWhiteSpace(csproj)) {
+            //TODO: parse csproj and include the entries that are <Compile Remove="..."/>
 
-        // foreach(var e in exclusions) Console.WriteLine(e);
+            // foreach(var e in exclusions) Console.WriteLine(e);
+        }
+
+        return ListSourceFiles(dir!, CollectionsMarshal.AsSpan( exclusions));
+    }
+    public static List<string> ListSourceFiles(string baseDir, ReadOnlySpan<string> exclusions) {
+        Debug.Assert(Directory.Exists(baseDir), "Not a directory");
 
         List<string> files = new(capacity: 256);
-        foreach(var filePath in Directory.EnumerateFiles(dir, "*.cs", SearchOption.AllDirectories)) {
-            if(exclusions.Any(ep => filePath.Contains(ep))){
-                //excluded
-                continue;
+        foreach(var filePath in Directory.EnumerateFiles(baseDir, "*.cs", SearchOption.AllDirectories)) {
+            foreach(var ep in exclusions) {
+                if(filePath.Contains(ep)) {
+                    //excluded
+                    continue;
+                }
             }
             files.Add(filePath);
         }
